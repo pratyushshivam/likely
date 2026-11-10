@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Likely: watch a language model choose its next word</title>
+    <meta
+      name="description"
+      content="A small language model, running in your browser. Watch it weigh its next word, turn its one dial, and follow the sentences it did not write."
+    />
+    <meta name="theme-color" content="#f2eee5" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="preload" href="./fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header class="mast">
+      <a class="mast__name" href="#top" aria-label="Likely, top of page">Likely<i aria-hidden="true"></i></a>
+      <span class="mast__note">An essay you can operate</span>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <h1 class="hero__title">
+          <span class="line"><span>A language model</span></span>
+          <span class="line"><span>writes one word</span></span>
+          <span class="line"><span>at a time. Each</span></span>
+          <span class="line"><span>one is a <em>bet.</em></span></span>
+        </h1>
+        <p class="hero__lede">
+          A small one runs on this page. Watch it weigh its options, turn the one dial that changes its character, and
+          send it down the roads it did not take.
+        </p>
+      </section>
+
+      <!-- 1 -->
+      <section class="part" aria-labelledby="h-choose">
+        <header class="part__head">
+          <span class="part__num" aria-hidden="true">1</span>
+          <h2 id="h-choose">Watch it choose</h2>
+        </header>
+        <div class="prose">
+          <p>
+            Give it the start of a sentence. Before every word, the model scores each of the 49,152 word-pieces it knows
+            for how well it would fit next. These are the front-runners, with the odds it gives them.
+          </p>
+        </div>
+
+        <div class="bench">
+          <form class="ask" id="ask" autocomplete="off">
+            <label class="ask__label" for="prompt">Start a sentence</label>
+            <div class="ask__row">
+              <input id="prompt" name="prompt" type="text" maxlength="160" spellcheck="false" enterkeyhint="go" />
+              <button class="btn btn--ink" type="submit" id="go">Continue it</button>
+            </div>
+          </form>
+
+          <div class="live" id="live" aria-live="polite"></div>
+
+          <p class="sentence sentence--stage" id="stage-sentence" aria-live="off"></p>
+
+          <div class="odds" id="odds">
+            <div class="odds__head">
+              <span id="odds-title">Next word</span>
+              <span id="odds-note"></span>
+            </div>
+            <ol class="odds__rows" id="odds-rows"></ol>
+            <p class="odds__tail" id="odds-tail"></p>
+          </div>
+        </div>
+
+        <div class="prose">
+          <p>
+            The model never plans the sentence. It reads everything so far and produces one list of odds. One word is
+            drawn from the list and added to the text. Then it reads the longer text and does it all again.
+          </p>
+          <p>
+            The pieces are called tokens. A token is usually a whole word, sometimes a fragment of one, sometimes a
+            comma or a full stop.
+          </p>
+        </div>
+      </section>
+
+      <!-- 2 -->
+      <section class="part" aria-labelledby="h-dial">
+        <header class="part__head">
+          <span class="part__num" aria-hidden="true">2</span>
+          <h2 id="h-dial">Turn the dial</h2>
+        </header>
+        <div class="prose">
+          <p>
+            The word is drawn by chance, weighted by the odds. Temperature reshapes the odds before the draw. Turn it
+            down and the favourite swells until nothing else can win. Turn it up and the list flattens until long shots
+            get through.
+          </p>
+        </div>
+
+        <div class="bench">
+          <div class="dial">
+            <output class="dial__value" id="dial-value" for="dial">0.8</output>
+            <div class="dial__control">
+              <label class="dial__label" for="dial">Temperature</label>
+              <div class="dial__track">
+                <div class="dial__ticks" id="dial-ticks" aria-hidden="true"></div>
+                <input id="dial" type="range" min="0.1" max="2" step="0.1" value="0.8" />
+              </div>
+              <div class="dial__ends" aria-hidden="true"><span>dull</span><span>unhinged</span></div>
+            </div>
+          </div>
+
+          <div class="strip" id="strip">
+            <div class="strip__needle" id="strip-needle"><span>the draw</span></div>
+            <div class="strip__bar" id="strip-bar" role="img" aria-label="The shortlist's odds, laid end to end"></div>
+            <p class="strip__note" id="strip-note"></p>
+          </div>
+
+          <p class="sentence sentence--dial" id="dial-sentence"></p>
+        </div>
+
+        <div class="prose">
+          <p>
+            The strip is the same list of odds, laid end to end. The marker is the draw: wherever it lands, that word is
+            written. On this page the draws are held still, so everything that changes when you move the dial is the
+            dial's doing.
+          </p>
+          <p>
+            Nothing inside the model changes. It gives the same scores every time. The “creativity” setting in an AI
+            product is largely this one number, together with a cut-off like the forty-word shortlist used here.
+          </p>
+        </div>
+      </section>
+
+      <!-- 3 -->
+      <section class="part" aria-labelledby="h-road">
+        <header class="part__head">
+          <span class="part__num" aria-hidden="true">3</span>
+          <h2 id="h-road">Take the other road</h2>
+        </header>
+        <div class="prose">
+          <p>
+            Every word that lost was the start of a sentence that never got written. Pick any word below, then pick what
+            it could have been instead. The model carries on from there.
+          </p>
+        </div>
+
+        <div class="bench">
+          <div class="roads" id="roads">
+            <p class="roads__prompt" id="roads-prompt"></p>
+            <div class="roads__body" id="roads-body">
+              <svg class="roads__lines" id="roads-lines" aria-hidden="true"></svg>
+              <ol class="roads__list" id="roads-list"></ol>
+            </div>
+          </div>
+          <div class="alts" id="alts" aria-live="polite"></div>
+          <div class="share">
+            <button class="btn" type="button" id="copy">Copy a link to this tree</button>
+            <span class="share__note" id="copy-note">The whole tree is stored in the link itself.</span>
+          </div>
+        </div>
+
+        <div class="prose">
+          <p>
+            An answer from a chatbot is one path through a tree like this one, only vastly larger. Ask again and you may
+            be given a different path.
+          </p>
+          <p>
+            It is also why a model can say something false in the same fluent voice it uses for something true. Each
+            word was likely, given the words before it. Likely is not the same as right.
+          </p>
+        </div>
+      </section>
+
+      <footer class="colophon">
+        <h2>What is running here</h2>
+        <div class="colophon__cols">
+          <p>
+            The model is <a id="model-link" target="_blank" rel="noopener">SmolLM2-135M</a> from Hugging Face, released
+            under the Apache 2.0 licence. It has 135 million parameters, a small fraction of the size of the models
+            behind chat assistants, which is why it fits in a browser tab and why its sentences wander.
+          </p>
+          <p>
+            What plays first is a recording of that model's real output. Press <em>Run it live</em> and the same model
+            downloads once, is kept by your browser, and runs on your own device. Nothing you type leaves it.
+          </p>
+        </div>
+        <p class="colophon__by">
+          Made by <a href="https://pratyushshivam.com" target="_blank" rel="noopener">Pratyush Shivam</a>
+        </p>
+      </footer>
+    </main>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
