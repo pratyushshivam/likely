@@ -17,12 +17,12 @@ import {
 } from "./core/tree";
 import { Live } from "./model/client";
 import { DEFAULT_PROMPT, MODEL_NAME, MODEL_URL } from "./model/config";
+import { calm, initMotion, opened, refreshSoon, scramble, setBand } from "./ui/motion";
 import { byId, el, frame, label, percent, sleep, split } from "./ui/text";
 
 const ROWS = 8;
 const CHIPS = 6;
 const MAX_ROADS = 12;
-const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* ------------------------------------------------------------------ state */
 
@@ -170,6 +170,7 @@ function makeRow(i: number): Row {
   const bar = el("span", "cand__bar");
   const pct = el("span", "cand__pct");
   const go = el("span", "cand__go", "Take this road");
+  button.dataset.cursor = "Branch";
   button.style.setProperty("--i", String(i));
   meter.append(bar, pct);
   button.append(rank, word, meter, go);
@@ -188,7 +189,7 @@ function makeRow(i: number): Row {
  * Show the odds for one position. `actual` is the token that was written
  * there, or null while the choice has not been made yet.
  */
-function setOdds(step: Step, actual: string | null, total: number, justPicked = false): void {
+function setOdds(step: Step, actual: string | null, total: number, justPicked = false, shuffle = false): void {
   odds.classList.remove("is-empty");
   const show: number[] = [];
   for (let i = 0; i < Math.min(ROWS, step.cands.length); i++) show.push(i);
@@ -209,11 +210,14 @@ function setOdds(step: Step, actual: string | null, total: number, justPicked = 
     const { join, word } = label(cand.piece);
     row.piece = cand.piece;
     row.rank.textContent = String(i + 1);
-    row.word.replaceChildren(...(join ? [el("span", "join", "+")] : []), word);
+    if (shuffle && !join && row.word.childElementCount === 0) scramble(row.word, word, 0.34 + r * 0.03);
+    else row.word.replaceChildren(...(join ? [el("span", "join", "+")] : []), word);
     row.pct.textContent = percent(p);
     row.bar.style.setProperty("--p", p.toFixed(5));
     const chosen = i === actualIndex;
     row.button.classList.toggle("is-chosen", chosen);
+    if (chosen) delete row.button.dataset.cursor;
+    else row.button.dataset.cursor = "Branch";
     row.button.setAttribute("aria-disabled", String(chosen));
     row.button.setAttribute(
       "aria-label",
@@ -319,6 +323,7 @@ function buildDial(): void {
 function renderDial(): void {
   dial.value = String(state.t);
   dialValue.textContent = state.t.toFixed(1);
+  dialValue.style.setProperty("--heat", String(Math.round(280 + ((state.t - T_MIN) / (T_MAX - T_MIN)) * 520)));
   dial.setAttribute("aria-valuetext", `${state.t.toFixed(1)}, between dull and unhinged`);
   const on = Math.round((state.t - T_MIN) / T_STEP);
   Array.from(dialTicks.children).forEach((tick, i) => {
@@ -701,7 +706,7 @@ async function run(from: TreeNode, mode: Mode, old: TreeNode | null, onStuck: (t
         const pace = shown++ < 3 ? 1 : 0.5;
         state.focus = -1;
         renderSentence(byId("stage-sentence"));
-        setOdds(step, null, 0);
+        setOdds(step, null, 0, false, true);
         await sleep(640 * pace);
         if (id !== runId) return;
         setOdds(step, piece, step.depth + 1, true);
@@ -743,6 +748,7 @@ async function run(from: TreeNode, mode: Mode, old: TreeNode | null, onStuck: (t
   if (mode === "show") state.focus = closestCall();
   else if (state.focus < 0 || state.focus >= length) state.focus = Math.min(Math.max(0, depthOf(from)), length - 1);
   renderAll();
+  refreshSoon();
   if (!finished) onStuck(tip);
 }
 
@@ -849,6 +855,7 @@ function restore(): boolean {
 /* ------------------------------------------------------------------- boot */
 
 function boot(): void {
+  initMotion();
   buildDial();
   const link = byId<HTMLAnchorElement>("model-link");
   link.href = MODEL_URL;
@@ -900,7 +907,13 @@ function boot(): void {
     .catch(() => null)
     .then(async (rec) => {
       recording = rec;
+      const first = rec ? lookup(rec, rec.prompt, []) : null;
+      if (first) {
+        const step = weigh(first, 0, T_DEFAULT);
+        setBand(first.slice(0, 14).map((c, i) => ({ word: label(c.piece).word, share: percent(step.probs[i] as number) })));
+      }
       if (restore()) return;
+      await opened;
       await Promise.race([document.fonts.ready, sleep(1200)]);
       // Begin the first run when the stage scrolls into view, so nobody misses it.
       const begin = () => {
