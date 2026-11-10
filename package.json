@@ -9,7 +9,8 @@
     "preview": "vite preview --port 5191",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "record": "tsx scripts/record.ts"
+    "record": "tsx scripts/record.ts",
+    "readme": "tsx scripts/readme-art.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
