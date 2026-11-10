@@ -28,7 +28,7 @@
   --t-body: clamp(1.05rem, 0.98rem + 0.32vw, 1.25rem);
   --t-lede: clamp(1.2rem, 1rem + 0.9vw, 1.75rem);
   --t-stage: clamp(1.75rem, 1.05rem + 3vw, 3.5rem);
-  --t-display: clamp(2.7rem, 1rem + 7.6vw, 8.25rem);
+  --t-display: clamp(2.2rem, 10.4vw, 8.25rem);
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-io: cubic-bezier(0.87, 0, 0.13, 1);
@@ -419,6 +419,12 @@ em {
   margin-top: clamp(26px, 3vw, 44px);
   max-width: 24em;
 }
+.word {
+  white-space: nowrap;
+}
+.cut {
+  color: var(--faint);
+}
 .sentence .given {
   color: var(--faint);
 }
@@ -527,7 +533,7 @@ em {
   align-items: center;
   gap: 0 12px;
   width: 100%;
-  min-height: clamp(42px, 3.6vw, 54px);
+  min-height: clamp(40px, 3.1vw, 46px);
   padding: 0;
   text-align: left;
   border-bottom: 1px solid var(--rule);
@@ -727,8 +733,10 @@ button.cand:hover .cand__bar {
 }
 
 .strip {
-  position: relative;
   margin-top: clamp(40px, 5vw, 72px);
+}
+.strip__track {
+  position: relative;
   padding-top: 30px;
 }
 .strip__bar {
@@ -768,7 +776,7 @@ button.cand:hover .cand__bar {
 .strip__needle {
   position: absolute;
   top: 0;
-  bottom: 2.4em;
+  bottom: 0;
   left: 0;
   width: 0;
   transition: left 0.6s var(--ease);
@@ -1069,15 +1077,28 @@ button.cand:hover .cand__bar {
     width: 100%;
     justify-content: center;
   }
-  .cand {
-    grid-template-columns: 1.5em minmax(4.6em, 6.6em) minmax(0, 1fr);
-    gap: 0 8px;
-  }
   .cand__go {
     display: none;
   }
+  .cand {
+    grid-template-columns: 1.6em minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 3px 8px;
+    padding: 7px 0 10px;
+    min-height: 0;
+  }
+  .cand__meter {
+    display: contents;
+  }
   .cand__bar {
-    width: calc(var(--p, 0) * (100% - 4.4em));
+    grid-column: 2 / -1;
+    grid-row: 2;
+    width: calc(var(--p, 0) * 100%);
+    height: 8px;
+  }
+  .cand__pct {
+    grid-column: 3;
+    grid-row: 1;
   }
   .dial {
     grid-template-columns: 1fr;

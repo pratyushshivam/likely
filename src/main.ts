@@ -1,4 +1,4 @@
-import { extend, weigh, type Provider, type Step } from "./core/generate";
+import { endsSentence, extend, weigh, type Provider, type Step } from "./core/generate";
 import { lookup, type Recording } from "./core/recording";
 import type { Cand } from "./core/sampling";
 import { clampTemperature, decodeShared, encodeShared, PROMPT_MAX, T_DEFAULT, T_MAX, T_MIN, T_STEP } from "./core/share";
@@ -95,12 +95,31 @@ function tokenButton(node: TreeNode, depth: number): { lead: string; button: HTM
   return { lead, button, word: w };
 }
 
+/** Lays words out so that a line never breaks inside a word made of several tokens. */
+function wordFlow(host: ParentNode): (lead: string, button: HTMLElement) => void {
+  let group: HTMLElement | null = null;
+  return (lead, button) => {
+    if (lead === "" && group) return void group.append(button);
+    group = el("span", "word");
+    group.append(button);
+    host.append(lead, group);
+  };
+}
+
+/** A sentence that stopped at the length limit, or was left half-written, trails off. */
+function trail(path: TreeNode[], writing: boolean): HTMLElement | "" {
+  const last = path[path.length - 1];
+  if (!last || writing || endsSentence(last.piece, path.length - 1)) return "";
+  return el("span", "cut", "…");
+}
+
 function renderSentence(host: HTMLElement, hidden: TreeNode | null = null): HTMLElement | null {
   const known = seen.get(host) ?? new WeakSet<TreeNode>();
   seen.set(host, known);
   const path = activePath();
   const frag = document.createDocumentFragment();
   frag.append(el("span", "given", state.prompt));
+  const place = wordFlow(frag);
   let fresh = 0;
   let hiddenWord: HTMLElement | null = null;
   path.forEach((node, depth) => {
@@ -115,9 +134,9 @@ function renderSentence(host: HTMLElement, hidden: TreeNode | null = null): HTML
     }
     known.add(node);
     button.addEventListener("click", () => select(state.active as TreeNode, depth));
-    frag.append(lead, button);
+    place(lead, button);
   });
-  if (state.writing) frag.append(el("span", "caret"));
+  frag.append(state.writing ? el("span", "caret") : trail(path, false));
   host.replaceChildren(frag);
   return hiddenWord;
 }
@@ -169,7 +188,7 @@ function makeRow(i: number): Row {
  * Show the odds for one position. `actual` is the token that was written
  * there, or null while the choice has not been made yet.
  */
-function setOdds(step: Step, actual: string | null, total: number): void {
+function setOdds(step: Step, actual: string | null, total: number, justPicked = false): void {
   odds.classList.remove("is-empty");
   const show: number[] = [];
   for (let i = 0; i < Math.min(ROWS, step.cands.length); i++) show.push(i);
@@ -203,7 +222,7 @@ function setOdds(step: Step, actual: string | null, total: number): void {
         : `${word}, ${percent(p)}. Take this road instead`,
     );
   });
-  odds.classList.toggle("is-picked", actualIndex >= 0);
+  odds.classList.toggle("is-picked", justPicked);
 
   oddsTitle.textContent = actual === null ? `Choosing word ${step.depth + 1}` : `Word ${step.depth + 1} of ${total}`;
   oddsNote.textContent = `Temperature ${state.t.toFixed(1)}`;
@@ -371,11 +390,12 @@ function renderRoads(): void {
     const isActive = leaf === activeLeaf;
     if (isActive) li.classList.add("is-active");
     const map = new Map<TreeNode, HTMLElement>();
+    const place = wordFlow(li);
     let fresh = 0;
     path.forEach((node, depth) => {
       const { lead, button, word } = tokenButton(node, depth);
-      if (depth < ghosts) button.classList.add("is-ghost");
       if (node === fork) button.classList.add("is-fork");
+      if (depth < ghosts) button.classList.add("is-ghost");
       else if (!roadSeen.has(node)) {
         button.classList.add("is-fresh");
         button.style.setProperty("--i", String(fresh++));
@@ -384,8 +404,9 @@ function renderRoads(): void {
       if (isActive && depth === state.focus) button.classList.add("is-focus");
       button.addEventListener("click", () => select(leaf, depth));
       map.set(node, word);
-      li.append(depth === 0 ? "" : lead, button);
+      place(depth === 0 ? "" : lead, button);
     });
+    li.append(trail(path, state.writing && isActive));
     wordEls.set(leaf, map);
     frag.append(li);
   }
@@ -683,7 +704,7 @@ async function run(from: TreeNode, mode: Mode, old: TreeNode | null, onStuck: (t
         setOdds(step, null, 0);
         await sleep(640 * pace);
         if (id !== runId) return;
-        setOdds(step, piece, step.depth + 1);
+        setOdds(step, piece, step.depth + 1, true);
         await sleep(300 * pace);
         if (id !== runId) return;
         tip = addChild(tip, piece);
@@ -881,8 +902,20 @@ function boot(): void {
       recording = rec;
       if (restore()) return;
       await Promise.race([document.fonts.ready, sleep(1200)]);
-      await sleep(calm ? 0 : 900);
-      if (state.root.children.length === 0 && !state.writing) start(rec?.prompt ?? DEFAULT_PROMPT, "show");
+      // Begin the first run when the stage scrolls into view, so nobody misses it.
+      const begin = () => {
+        if (state.root.children.length === 0 && !state.writing) start(rec?.prompt ?? DEFAULT_PROMPT, "show");
+      };
+      if (calm || !("IntersectionObserver" in window)) return begin();
+      const watcher = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          watcher.disconnect();
+          setTimeout(begin, 350);
+        },
+        { threshold: 0.6 },
+      );
+      watcher.observe(byId("stage-sentence"));
     });
 }
 

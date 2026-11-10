@@ -18,7 +18,7 @@ import { NextTokenModel } from "../src/model/lm";
 
 const prompt = process.argv[2] ?? DEFAULT_PROMPT;
 const dtype = process.argv[3] ?? VARIANTS.wasm.dtype;
-const RUNNER_UPS = Number(process.argv[4] ?? 5);
+const RUNNER_UPS = Number(process.argv[4] ?? 7);
 const out = process.argv[5] ?? "public/recording.json";
 
 const model = await NextTokenModel.load({ device: "cpu", dtype });

@@ -17,6 +17,7 @@ export function label(piece: string): { join: boolean; word: string } {
 }
 
 export function percent(p: number): string {
+  if (p >= 0.995 && p < 0.99995) return ">99%";
   if (p >= 0.0995) return `${Math.round(p * 100)}%`;
   if (p >= 0.001) return `${(p * 100).toFixed(1)}%`;
   return "<0.1%";
