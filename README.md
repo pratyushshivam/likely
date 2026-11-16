@@ -9,6 +9,7 @@
   <a href="#the-model">The model</a> ·
   <a href="#measured">Measured</a> ·
   <a href="#run-it">Run it</a> ·
+  <a href="https://www.pratyushshivam.com/projects/likely/">The full write-up</a> ·
   <a href="https://www.pratyushshivam.com/">pratyushshivam.com</a>
 </p>
 
